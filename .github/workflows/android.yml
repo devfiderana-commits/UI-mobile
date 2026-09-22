@@ -1,4 +1,4 @@
-```yaml
+
 name: Android Build
 
 on:
@@ -72,4 +72,3 @@ jobs:
           name: android-apk
           path: src-tauri/**/*.apk
           if-no-files-found: error
-```
