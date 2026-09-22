@@ -14,43 +14,38 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Node.js
+      - name: Setup Node
         uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
 
-      - name: Rust
+      - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
 
-      - name: Java
+      - name: Setup Java
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 17
 
-      - name: Android SDK
+      - name: Check Android
         run: |
-          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
-          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          java -version
+          adb version
+          sdkmanager --version
 
-          yes | sdkmanager --licenses > /dev/null || true
-
-          sdkmanager \
-            "platform-tools" \
-            "platforms;android-34" \
-            "build-tools;34.0.0" \
-            "ndk;26.1.10909125"
-
-      - name: Dependencies
+      - name: Install dependencies
         run: npm ci
 
-      - name: Frontend
+      - name: Build frontend
         run: npm run build
 
-      - name: Tauri Android
+      - name: Initialize Tauri Android
         run: npx tauri android init
 
       - name: Build APK
@@ -60,6 +55,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: android-apk
-          path: src-tauri/**/*.apk
+          path: src-tauri/gen/android/app/build/outputs/apk/**/*.apk
           if-no-files-found: error
-
