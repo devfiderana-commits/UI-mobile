@@ -1,4 +1,4 @@
-
+```yaml
 name: Android Build
 
 on:
@@ -8,93 +8,68 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-android:
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
+  android:
+    name: Build Android
+    runs-on: ubuntu-24.04
 
     steps:
-      # 1. Récupérer le projet
       - name: Checkout
         uses: actions/checkout@v5
 
-      # 2. Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: "22"
           cache: npm
 
-      # 3. Rust
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
 
-      # 4. Java
       - name: Setup Java
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
 
-      # 5. Android SDK / NDK
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Setup Android SDK packages
+      - name: Install Android SDK packages
         run: |
           sdkmanager "platform-tools"
           sdkmanager "platforms;android-34"
           sdkmanager "build-tools;34.0.0"
           sdkmanager "ndk;26.1.10909125"
 
-      # 6. Installer les dépendances JavaScript
-      - name: Install dependencies
+      - name: Install npm dependencies
         run: npm ci
 
-      # 7. Construire le frontend React/Vite
       - name: Build frontend
         run: npm run build
 
-      # 8. Générer le projet Android Tauri
-      - name: Initialize Android
-        run: npm run tauri android init -- --ci
+      - name: Initialize Tauri Android
+        run: npx tauri android init
 
-      # 9. Vérifier que Gradle existe maintenant
       - name: Verify Android project
         run: |
+          echo "Checking Android project..."
           test -f src-tauri/gen/android/gradlew
-          echo "Android project successfully initialized"
+          echo "Android project OK"
 
-      # 10. Construire APK
-      - name: Build APK
-        run: npm run tauri android build -- --apk
+      - name: Build Android APK
+        run: npx tauri android build --apk
 
-      # 11. Construire AAB
-      - name: Build AAB
-        run: npm run tauri android build -- --aab
-
-      # 12. Afficher les fichiers générés
-      - name: Find Android artifacts
+      - name: Find APK
         run: |
-          echo "=== APK ==="
+          echo "Searching for APK..."
           find src-tauri -type f -name "*.apk" -print
 
-          echo "=== AAB ==="
-          find src-tauri -type f -name "*.aab" -print
-
-      # 13. Envoyer APK sur GitHub Actions
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: android-apk
           path: src-tauri/**/*.apk
           if-no-files-found: error
-
-      # 14. Envoyer AAB sur GitHub Actions
-      - name: Upload AAB
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-aab
-          path: src-tauri/**/*.aab
-          if-no-files-found: error
+```
